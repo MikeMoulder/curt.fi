@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useChainId, useSendTransaction, useSwitchChain } from "wagmi";
 import { POPULAR_TOKENS, SUPPORTED_CHAINS } from "@/lib/config";
 import { parseTokenAmount, chainName } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -18,7 +18,9 @@ export default function DepositModal() {
   const requestPortfolioRefresh = useStore((s) => s.requestPortfolioRefresh);
 
   const { address } = useAccount();
-  const { sendTransaction, isPending: isSending } = useSendTransaction();
+  const currentChainId = useChainId();
+  const { sendTransactionAsync, isPending: isSending } = useSendTransaction();
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
   const [selectedChainId, setSelectedChainId] = useState(SUPPORTED_CHAINS[0].id);
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
@@ -29,6 +31,7 @@ export default function DepositModal() {
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const targetVault = depositVaultAddress ? vaults.find((v) => v.address === depositVaultAddress) : null;
+  const needsChainSwitch = quote != null && currentChainId !== quote.chainId;
 
   useEffect(() => {
     const tokens = POPULAR_TOKENS[selectedChainId];
@@ -76,20 +79,27 @@ export default function DepositModal() {
     }
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!quote) return;
-    sendTransaction(
-      {
+    setError(null);
+
+    try {
+      if (currentChainId !== quote.chainId) {
+        await switchChainAsync({ chainId: quote.chainId });
+      }
+
+      const hash = await sendTransactionAsync({
         to: quote.to as `0x${string}`,
         data: quote.data as `0x${string}`,
         value: BigInt(quote.value || "0"),
         chainId: quote.chainId,
-      },
-      {
-        onSuccess: (hash) => { setTxHash(hash); requestPortfolioRefresh(); },
-        onError: (err) => { setError(err.message); },
-      }
-    );
+      });
+
+      setTxHash(hash);
+      requestPortfolioRefresh();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : `Failed to submit transaction on ${chainName(quote.chainId)}`);
+    }
   }
 
   const tokens: TokenInfo[] = POPULAR_TOKENS[selectedChainId] ?? [];
@@ -195,16 +205,28 @@ export default function DepositModal() {
                   {quote && (
                     <div className="rounded-xl p-3 text-sm text-curt-accent bg-curt-accent-light flex items-center gap-2">
                       <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                      Quote ready. Confirm to proceed.
+                      {needsChainSwitch
+                        ? `Quote ready. Your wallet will switch to ${chainName(quote.chainId)} before confirmation.`
+                        : "Quote ready. Confirm to proceed."}
                     </div>
                   )}
 
                   <button
                     onClick={quote ? handleConfirm : handleGetQuote}
-                    disabled={!amount || !selectedToken || !targetVault || quoting || isSending}
+                    disabled={!amount || !selectedToken || !targetVault || quoting || isSending || isSwitchingChain}
                     className="btn-primary w-full py-3.5 text-sm"
                   >
-                    {isSending ? "Confirming..." : quoting ? "Getting quote..." : quote ? "Confirm Deposit" : "Get Quote"}
+                    {isSwitchingChain
+                      ? "Switching chain..."
+                      : isSending
+                        ? "Confirming..."
+                        : quoting
+                          ? "Getting quote..."
+                          : quote
+                            ? needsChainSwitch
+                              ? "Switch Network & Confirm"
+                              : "Confirm Deposit"
+                            : "Get Quote"}
                   </button>
                 </>
               )}

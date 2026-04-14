@@ -26,6 +26,25 @@ export function parseTokenAmount(amount: string, decimals: number): string {
   return raw.replace(/^0+/, "") || "0";
 }
 
+export function formatTokenAmount(amount: string, decimals: number): string {
+  const sanitized = amount.replace(/^0+/, "") || "0";
+
+  if (decimals === 0) {
+    return sanitized;
+  }
+
+  const whole =
+    sanitized.length > decimals
+      ? sanitized.slice(0, sanitized.length - decimals)
+      : "0";
+  const fraction = sanitized
+    .slice(-decimals)
+    .padStart(decimals, "0")
+    .replace(/0+$/, "");
+
+  return fraction.length > 0 ? `${whole}.${fraction}` : whole;
+}
+
 export function chainName(chainId: number): string {
   const names: Record<number, string> = {
     1: "Ethereum",

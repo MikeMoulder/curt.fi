@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useChainId, useSendTransaction, useSwitchChain } from "wagmi";
 import { POPULAR_TOKENS, SUPPORTED_CHAINS } from "@/lib/config";
-import { parseTokenAmount, formatUsd } from "@/lib/utils";
+import { parseTokenAmount, formatTokenAmount, formatUsd, chainName } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 type TokenInfo = { address: string; symbol: string; decimals: number };
@@ -18,7 +18,9 @@ export default function WithdrawModal() {
   const requestPortfolioRefresh = useStore((s) => s.requestPortfolioRefresh);
 
   const { address } = useAccount();
-  const { sendTransaction, isPending: isSending } = useSendTransaction();
+  const currentChainId = useChainId();
+  const { sendTransactionAsync, isPending: isSending } = useSendTransaction();
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
   const [selectedPositionIndex, setSelectedPositionIndex] = useState(0);
   const [destChainId, setDestChainId] = useState(SUPPORTED_CHAINS[0].id);
@@ -42,6 +44,8 @@ export default function WithdrawModal() {
   }, [destChainId]);
 
   const selectedPosition = positions[selectedPositionIndex] ?? null;
+  const selectedPositionToken = selectedPosition?.vault.tokens[0] ?? null;
+  const needsChainSwitch = quote != null && currentChainId !== quote.chainId;
 
   function handleClose() {
     setWithdrawOpen(false);
@@ -54,6 +58,10 @@ export default function WithdrawModal() {
 
   async function handleGetQuote() {
     if (!address || !selectedPosition || !destToken || !amount) return;
+    if (!selectedPosition.vault.isRedeemable) {
+      setError("This position cannot be redeemed through LI.FI Composer yet.");
+      return;
+    }
     setQuoting(true);
     setError(null);
     setQuote(null);
@@ -68,7 +76,7 @@ export default function WithdrawModal() {
           toToken: destToken.address,
           fromAddress: address,
           toAddress: address,
-          fromAmount: parseTokenAmount(amount, selectedPosition.vault.tokens[0]?.decimals ?? 18),
+          fromAmount: parseTokenAmount(amount, selectedPositionToken?.decimals ?? 18),
         }),
       });
       if (!res.ok) {
@@ -84,20 +92,27 @@ export default function WithdrawModal() {
     }
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!quote) return;
-    sendTransaction(
-      {
+    setError(null);
+
+    try {
+      if (currentChainId !== quote.chainId) {
+        await switchChainAsync({ chainId: quote.chainId });
+      }
+
+      const hash = await sendTransactionAsync({
         to: quote.to as `0x${string}`,
         data: quote.data as `0x${string}`,
         value: BigInt(quote.value || "0"),
         chainId: quote.chainId,
-      },
-      {
-        onSuccess: (hash) => { setTxHash(hash); requestPortfolioRefresh(); },
-        onError: (err) => { setError(err.message); },
-      }
-    );
+      });
+
+      setTxHash(hash);
+      requestPortfolioRefresh();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : `Failed to submit transaction on ${chainName(quote.chainId)}`);
+    }
   }
 
   const destTokens: TokenInfo[] = POPULAR_TOKENS[destChainId] ?? [];
@@ -183,7 +198,7 @@ export default function WithdrawModal() {
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-[11px] text-curt-text-muted uppercase tracking-wider font-medium">Amount</label>
                       {selectedPosition && (
-                        <button onClick={() => setAmount(selectedPosition.balance)} className="text-[11px] text-curt-accent font-medium hover:text-curt-accent-hover cursor-pointer">
+                        <button onClick={() => setAmount(formatTokenAmount(selectedPosition.balance, selectedPositionToken?.decimals ?? 18))} className="text-[11px] text-curt-accent font-medium hover:text-curt-accent-hover cursor-pointer">
                           MAX
                         </button>
                       )}
@@ -219,21 +234,39 @@ export default function WithdrawModal() {
                     </div>
                   </div>
 
+                  {selectedPosition && !selectedPosition.vault.isRedeemable && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+                      This position is visible in your portfolio, but curt.fi cannot prove it is a redeemable vault token yet. Composer withdrawals are disabled to avoid prompting for the wrong wallet asset.
+                    </div>
+                  )}
+
                   {error && <p className="text-sm text-curt-danger">{error}</p>}
 
                   {quote && (
                     <div className="rounded-xl p-3 text-sm text-curt-accent bg-curt-accent-light flex items-center gap-2">
                       <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                      Quote ready. Confirm to proceed.
+                      {needsChainSwitch
+                        ? `Quote ready. Your wallet will switch to ${chainName(quote.chainId)} before confirmation.`
+                        : "Quote ready. Confirm to proceed."}
                     </div>
                   )}
 
                   <button
                     onClick={quote ? handleConfirm : handleGetQuote}
-                    disabled={!amount || !selectedPosition || !destToken || quoting || isSending}
+                    disabled={!amount || !selectedPosition || !destToken || quoting || isSending || isSwitchingChain || !selectedPosition.vault.isRedeemable}
                     className="btn-primary w-full py-3.5 text-sm"
                   >
-                    {isSending ? "Confirming..." : quoting ? "Getting quote..." : quote ? "Confirm Withdrawal" : "Get Quote"}
+                    {isSwitchingChain
+                      ? "Switching chain..."
+                      : isSending
+                        ? "Confirming..."
+                        : quoting
+                          ? "Getting quote..."
+                          : quote
+                            ? needsChainSwitch
+                              ? "Switch Network & Confirm"
+                              : "Confirm Withdrawal"
+                            : "Get Quote"}
                   </button>
                 </>
               )}

@@ -35,6 +35,7 @@ export interface Vault {
   analytics: VaultAnalytics;
   tags: string[];
   isTransactional: boolean;
+  isRedeemable?: boolean;
   name?: string;
 }
 

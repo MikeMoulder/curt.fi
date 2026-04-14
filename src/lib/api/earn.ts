@@ -43,6 +43,7 @@ interface RawEarnVault {
   analytics?: RawEarnAnalytics | null;
   tags?: string[] | null;
   isTransactional?: boolean | null;
+  isRedeemable?: boolean | null;
 }
 
 interface RawEarnVaultsResponse {
@@ -166,6 +167,7 @@ function transformVault(raw: RawEarnVault): Vault {
     },
     tags: raw.tags ?? [],
     isTransactional: raw.isTransactional ?? false,
+    isRedeemable: raw.isRedeemable ?? false,
   };
 }
 
@@ -175,17 +177,7 @@ function isVaultBackedPosition(
   return "vault" in position && Boolean(position.vault);
 }
 
-function transformPosition(position: RawEarnPosition): Position {
-  if (isVaultBackedPosition(position)) {
-    return {
-      vault: transformVault(position.vault),
-      balanceUsd: position.balanceUsd ?? "0",
-      balance: position.balance ?? position.balanceNative ?? "0",
-      underlyingBalance:
-        position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
-    };
-  }
-
+function buildSyntheticPosition(position: RawEarnPositionWithAsset): Position {
   const asset = position.asset;
 
   return {
@@ -221,12 +213,43 @@ function transformPosition(position: RawEarnPosition): Position {
       },
       tags: [],
       isTransactional: false,
+      isRedeemable: false,
     },
     balanceUsd: position.balanceUsd ?? "0",
     balance: position.balance ?? position.balanceNative ?? "0",
     underlyingBalance:
       position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
   };
+}
+
+async function transformPosition(position: RawEarnPosition): Promise<Position> {
+  if (isVaultBackedPosition(position)) {
+    return {
+      vault: transformVault(position.vault),
+      balanceUsd: position.balanceUsd ?? "0",
+      balance: position.balance ?? position.balanceNative ?? "0",
+      underlyingBalance:
+        position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
+    };
+  }
+
+  if (position.asset?.address && position.chainId) {
+    try {
+      const vault = await getVault(position.chainId, position.asset.address);
+
+      return {
+        vault,
+        balanceUsd: position.balanceUsd ?? "0",
+        balance: position.balance ?? position.balanceNative ?? "0",
+        underlyingBalance:
+          position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
+      };
+    } catch {
+      return buildSyntheticPosition(position);
+    }
+  }
+
+  return buildSyntheticPosition(position);
 }
 
 export async function getVaults(opts?: {
@@ -298,5 +321,5 @@ export async function getPositions(userAddress: string): Promise<Position[]> {
     { cache: "no-store" }
   );
 
-  return (response.data ?? response.positions ?? []).map(transformPosition);
+  return Promise.all((response.data ?? response.positions ?? []).map(transformPosition));
 }

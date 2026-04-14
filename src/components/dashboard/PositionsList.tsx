@@ -108,10 +108,11 @@ export default function PositionsList() {
                     </p>
                 </div>
                   <button
+                    disabled={!p.vault.isRedeemable}
                     onClick={() => handleWithdraw(p.vault.address)}
-                    className="btn-ghost px-3 py-2 text-[12px]"
+                    className="btn-ghost px-3 py-2 text-[12px] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    Withdraw
+                    {p.vault.isRedeemable ? "Withdraw" : "Withdraw unavailable"}
                   </button>
                 </div>
               </div>
