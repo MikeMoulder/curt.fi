@@ -36,12 +36,12 @@ function DashboardContent() {
   if (!isConnected) return null;
 
   const heading = positions.length
-    ? "Curtis is running point on the portfolio."
-    : "Curtis is ready to design the first move.";
+    ? "Your portfolio, in clear view."
+    : "A simpler start to putting cash to work.";
 
   const supportingCopy = positions.length
-    ? "He now owns the visual center of the room: reading the market, proposing the next move, and exposing the full routing logic when you want proof."
-    : "Start from a posture, let Curtis map the route, and open the technical layer only when you want to inspect the machinery underneath.";
+    ? "See what is earning, where you are concentrated, and what looks worth changing next. The deeper routing and allocation detail is still one click away when you want it."
+    : "Choose how cautious you want to be, sketch a first plan, and open the details only when you want to inspect how the money would move.";
 
   return (
     <div className="min-h-screen text-curt-text">
@@ -55,11 +55,11 @@ function DashboardContent() {
                 <span className="text-[20px] font-semibold tracking-tight text-curt-text">
                   curt<span className="text-curt-accent">.fi</span>
                 </span>
-                <p className="text-[12px] text-curt-text-muted">Banking calm in front. DeFi machinery behind the curtain.</p>
+                <p className="text-[12px] text-curt-text-muted">A calmer way to manage onchain yield.</p>
               </div>
               <div className="soft-pill hidden sm:inline-flex">
                 <span className="h-2 w-2 rounded-full bg-curt-accent live-dot" />
-                Curtis command deck live
+                Portfolio desk live
               </div>
             </div>
             <ConnectButton showBalance={false} chainStatus="icon" />
@@ -69,7 +69,7 @@ function DashboardContent() {
         <main className="relative z-10 mx-auto max-w-7xl space-y-6 px-4 pt-6 sm:px-6 lg:px-8">
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_360px] xl:items-end">
             <div>
-              <span className="section-label">Curtis Center Stage</span>
+              <span className="section-label">Portfolio Overview</span>
               <h1 className="mt-4 max-w-4xl text-[clamp(2.6rem,5vw,5rem)] font-semibold leading-[0.94] tracking-[-0.07em] text-curt-text">
                 {heading}
               </h1>
@@ -80,17 +80,17 @@ function DashboardContent() {
 
             <aside className="ghost-panel p-5 sm:p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-curt-text-muted">
-                Transparency Layer
+                Details Layer
               </p>
               <p className="mt-3 text-[18px] font-semibold tracking-[-0.04em] text-curt-text">
-                The curtain is one pull away.
+                The full breakdown stays close.
               </p>
               <p className="mt-2 text-sm leading-6 text-curt-text-secondary">
-                Inspect chain spread, protocol concentration, and the reasoning behind every move without leaving the dashboard.
+                Check chain exposure, protocol mix, and the thinking behind each plan without leaving the dashboard.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <button onClick={toggleCurtain} className="btn-secondary px-4 py-2.5 text-[13px]">
-                  Open curtain
+                  Open details
                 </button>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-curt-text-muted">
                   {positions.length} positions · {(vaults.length || 672).toLocaleString()} watched · {riskProfile}
@@ -116,19 +116,19 @@ function DashboardContent() {
 
             <aside className="ghost-panel p-5 sm:p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-curt-text-muted">
-                Why This Feels Different
+                Why It Reads Better
               </p>
               <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.05em] text-curt-text">
-                Curtis leads. The rest explains.
+                The main view stays readable.
               </h2>
               <p className="mt-3 text-sm leading-7 text-curt-text-secondary">
-                The dashboard now gives Curtis the dominant surface, lets the conversation drive next steps, and keeps the technical proof close instead of burying him in a corner.
+                The dashboard keeps the money, the plan, and the next action in plain view, then leaves the technical proof nearby instead of forcing it into every sentence.
               </p>
               <div className="mt-6 space-y-3">
                 {[
-                  "Generate a fresh thesis without leaving the main surface.",
-                  "Shift risk posture directly from Curtis before you move capital.",
-                  "Open the curtain when you want the raw routing and allocation detail.",
+                  "Build a fresh plan without leaving the main view.",
+                  "Change your risk setting before you move capital.",
+                  "Open the details panel when you want routing and allocation context.",
                 ].map((item) => (
                   <div
                     key={item}

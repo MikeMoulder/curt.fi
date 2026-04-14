@@ -16,7 +16,7 @@ export default function SystemSignals() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      text: positions.length > 0 ? "Live vault monitoring is active" : "Curtis is scanning for a first route",
+      text: positions.length > 0 ? "Live monitoring is on" : "Scanning for a sensible first option",
     },
     {
       icon: (
@@ -24,7 +24,7 @@ export default function SystemSignals() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
         </svg>
       ),
-      text: `${riskProfile.charAt(0).toUpperCase() + riskProfile.slice(1)} risk`,
+      text: `${riskProfile.charAt(0).toUpperCase() + riskProfile.slice(1)} risk setting`,
     },
     {
       icon: (
@@ -44,7 +44,7 @@ export default function SystemSignals() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <span className="section-label">System Signals</span>
-          <h3 className="mt-3 text-[20px] font-semibold tracking-tight text-curt-text">The quiet indicators Curtis is watching.</h3>
+          <h3 className="mt-3 text-[20px] font-semibold tracking-tight text-curt-text">A few quiet signals worth keeping in view.</h3>
         </div>
       </div>
 

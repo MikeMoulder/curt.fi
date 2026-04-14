@@ -42,33 +42,33 @@ export default function RecommendationCard() {
             <span className="w-1.5 h-1.5 rounded-full bg-curt-violet live-dot" />
             Curtis
           </span>
-          <span className="badge badge-action">Recommendation Engine</span>
+          <span className="badge badge-action">Suggested next step</span>
         </div>
 
         {!strategy || !topAlloc ? (
           <>
-            <h3 className="text-[20px] font-semibold tracking-tight text-curt-text">Curtis can surface the next move instead of waiting in the margins.</h3>
+            <h3 className="text-[20px] font-semibold tracking-tight text-curt-text">When you want a direction, this panel gives you one.</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-curt-text-muted">
               {positions.length === 0
-                ? "Start with a strategy draft and Curtis will translate your posture into a first allocation plan."
-                : "No fresh rebalance is staged yet. Ask Curtis for a safer, higher-yield, or more diversified plan and he’ll turn it into a live recommendation."}
+                ? "Start with a draft plan and turn your risk setting into a practical first allocation."
+                : "No updated rebalance is staged yet. Ask for a safer mix, a higher rate, or a broader spread and this panel will turn it into a concrete suggestion."}
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <button onClick={() => void generateStrategyFromStore(riskProfile)} className="btn-action">
-                Generate {riskProfile} plan
+                Build {riskProfile} plan
               </button>
               <button onClick={() => void generateStrategyFromStore("safe")} className="btn-ghost text-[13px]">
-                Safer draft
+                Safer option
               </button>
               <button onClick={() => void generateStrategyFromStore("aggressive")} className="btn-ghost text-[13px]">
-                Higher-yield draft
+                Higher-yield option
               </button>
             </div>
           </>
         ) : (
           <>
-            <h3 className="text-[20px] font-semibold tracking-tight text-curt-text">Curtis wants to route fresh capital toward {topAlloc.vault.protocol.name}.</h3>
+            <h3 className="text-[20px] font-semibold tracking-tight text-curt-text">Top current idea: {topAlloc.vault.protocol.name}.</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-curt-text-muted">{strategy.summary}</p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -83,13 +83,13 @@ export default function RecommendationCard() {
 
             <div className="mt-5 flex flex-wrap gap-2 border-t border-curt-border pt-4">
               <button onClick={handleAccept} className="btn-action">
-                Deposit into top pick
+                Deposit into this pick
               </button>
               <button onClick={toggleCurtain} className="btn-ghost text-[13px]">
-                Inspect in curtain
+                Open details
               </button>
               <button onClick={() => void generateStrategyFromStore(riskProfile)} className="btn-ghost text-[13px]">
-                Regenerate
+                Refresh plan
               </button>
               <button onClick={handleDismiss} className="btn-ghost text-[13px]">Dismiss</button>
             </div>

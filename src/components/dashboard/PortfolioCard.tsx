@@ -30,10 +30,10 @@ export default function PortfolioCard() {
         <div>
           <span className="section-label">Capital Account</span>
           <h2 className="mt-4 text-[28px] font-semibold tracking-tight text-curt-text sm:text-[34px]">
-            Your money, staged like a premium operating account.
+            Your portfolio at a glance.
           </h2>
           <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-curt-text-muted sm:text-[15px]">
-            The front layer stays calm and legible. Curtis handles the tactical routing, monitoring, and strategy work in the command deck above.
+            Keep the top layer readable. Use the controls above to build a plan, move cash, or open the deeper breakdown when you want more context.
           </p>
 
           <div className="mt-8">
@@ -53,7 +53,7 @@ export default function PortfolioCard() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                 </svg>
-                Launch allocation plan
+                Build first plan
               </button>
             ) : (
               <button onClick={() => setDepositOpen(true)} className="btn-accent px-5 py-3 text-[13px]">
@@ -79,7 +79,7 @@ export default function PortfolioCard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Pull the curtain
+              Open details
             </button>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function PortfolioCard() {
           <div className="rounded-[24px] border border-white/70 bg-white/70 p-4">
             <p className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Live Allocations</p>
             <p className="mt-3 font-data text-[24px] font-semibold text-curt-text">{positions.length}</p>
-            <p className="mt-1 text-[12px] text-curt-text-muted">{positions.length === 0 ? "Curtis is standing by." : "Tracked in real time."}</p>
+            <p className="mt-1 text-[12px] text-curt-text-muted">{positions.length === 0 ? "Ready when you are." : "Tracked in real time."}</p>
           </div>
         </div>
       </div>

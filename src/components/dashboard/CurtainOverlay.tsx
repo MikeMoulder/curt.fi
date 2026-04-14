@@ -89,7 +89,7 @@ export default function CurtainOverlay() {
           <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4" style={{ background: "rgba(12,15,26,0.92)", backdropFilter: "blur(12px)" }}>
             <div className="flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-curt-violet live-dot" />
-              <span className="text-[13px] font-medium text-curtain-text">System Transparency</span>
+              <span className="text-[13px] font-medium text-curtain-text">Portfolio Details</span>
             </div>
             <button onClick={toggleCurtain} className="flex items-center gap-1.5 text-[13px] text-curtain-text-muted hover:text-curtain-text transition-colors cursor-pointer">
               Close
@@ -184,7 +184,7 @@ export default function CurtainOverlay() {
                 transition={{ delay: 0.15 }}
                 className="curtain-card p-5"
               >
-                <p className="text-[10px] text-curtain-text-muted uppercase tracking-wider font-medium mb-3">Curtis Strategy Reasoning</p>
+                <p className="text-[10px] text-curtain-text-muted uppercase tracking-wider font-medium mb-3">Why This Plan</p>
                 <p className="text-[13px] text-curtain-text leading-relaxed mb-4">{strategy.summary}</p>
 
                 <div className="flex gap-4 mb-4">
@@ -222,23 +222,23 @@ export default function CurtainOverlay() {
               transition={{ delay: 0.2 }}
               className="curtain-card p-5"
             >
-              <p className="text-[10px] text-curtain-text-muted uppercase tracking-wider font-medium mb-3">Execution Log</p>
+              <p className="text-[10px] text-curtain-text-muted uppercase tracking-wider font-medium mb-3">Activity</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-3 text-[12px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                  <span className="text-curtain-text-muted">Portfolio analysis completed</span>
+                  <span className="text-curtain-text-muted">Portfolio snapshot refreshed</span>
                   <span className="text-curtain-text-muted ml-auto font-data text-[10px]">Just now</span>
                 </div>
                 {positions.length > 0 && (
                   <div className="flex items-center gap-3 text-[12px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                    <span className="text-curtain-text-muted">{positions.length} active position{positions.length !== 1 ? "s" : ""} monitored</span>
+                    <span className="text-curtain-text-muted">{positions.length} live position{positions.length !== 1 ? "s" : ""} in view</span>
                     <span className="text-curtain-text-muted ml-auto font-data text-[10px]">Active</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3 text-[12px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-curt-violet shrink-0" />
-                  <span className="text-curtain-text-muted">Vault scanning across 21 chains</span>
+                  <span className="text-curtain-text-muted">Watching vaults across 21 chains</span>
                   <span className="text-curtain-text-muted ml-auto font-data text-[10px]">Continuous</span>
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function CurtainOverlay() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-curt-violet mt-1.5 shrink-0 live-dot" />
               <p className="text-[12px] text-curtain-text-muted leading-relaxed">
-                Curtis continuously monitors vault performance, TVL shifts, and APY trends. When conditions change, you&apos;ll see proactive recommendations. All decisions are yours to accept or dismiss.
+                Use this panel when you want the numbers, diversification, and plan rationale close at hand. It is here to support decisions, not to pressure them.
               </p>
             </motion.div>
           </div>

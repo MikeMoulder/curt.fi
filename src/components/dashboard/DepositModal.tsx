@@ -163,7 +163,7 @@ export default function DepositModal() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-curt-text-muted">Select a vault from strategy or ask Curtis.</p>
+                    <p className="text-sm text-curt-text-muted">Choose a vault from the current plan or use chat to find one.</p>
                   )}
 
                   {/* Chain */}

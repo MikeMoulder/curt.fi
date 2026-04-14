@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const SUGGESTIONS_NEW = [
   "Where should I put my first deposit?",
   "What vaults are earning the most right now?",
-  "Build me a balanced strategy",
+  "Build me a balanced plan",
 ];
 
 const SUGGESTIONS_EXISTING = [
@@ -117,7 +117,7 @@ function ThinkingBlock() {
           <span className="w-1.5 h-1.5 rounded-full bg-curt-violet pulse-dot" />
           Curtis
         </span>
-        <span className="text-sm text-curt-text-muted">Analyzing...</span>
+        <span className="text-sm text-curt-text-muted">Looking through it...</span>
       </div>
       <div className="mt-3 flex gap-3">
         <div className="h-3 w-32 shimmer rounded" />
@@ -161,23 +161,23 @@ export default function AIFeed() {
     if (!hasPositions) {
       addChatMessage({
         role: "assistant",
-        content: `Welcome to curt.fi. I'm Curtis, your AI strategist. You don't have any active positions yet. I can help you find the best risk-adjusted yield across 21 chains and 672+ vaults. Tell me your risk preference, or just say "deposit" to get started.`,
+        content: `Welcome to curt.fi. You do not have any positions yet. I can help you compare starting options, explain the tradeoffs, or line up a first deposit. Tell me how cautious you want to be, or just say "deposit" to get started.`,
         actions: [
-          { type: "generate_strategy", label: "Generate strategy", riskProfile: "balanced" },
-          { type: "open_deposit", label: "Deposit" },
+          { type: "generate_strategy", label: "Build a plan", riskProfile: "balanced" },
+          { type: "open_deposit", label: "Make a deposit" },
         ],
       });
       return;
     }
 
     // Build a context-aware initial summary
-    const summary = `Your portfolio holds ${formatUsd(totalBalance)} earning ${formatApy(blendedApy)} blended APY across ${positions.length} position${positions.length !== 1 ? "s" : ""}. I've analyzed current vault conditions across all supported chains. Ask me to optimize, rebalance, or explain your current allocations.`;
+    const summary = `You currently have ${formatUsd(totalBalance)} earning ${formatApy(blendedApy)} blended APY across ${positions.length} position${positions.length !== 1 ? "s" : ""}. If you want, I can look for a safer mix, a better rate, or walk through why each allocation is there.`;
     addChatMessage({
       role: "assistant",
       content: summary,
       actions: [
-        { type: "generate_strategy", label: "Optimize allocation" },
-        { type: "toggle_curtain", label: "Show positions", open: true },
+        { type: "generate_strategy", label: "Refresh plan" },
+        { type: "toggle_curtain", label: "Open details", open: true },
       ],
     });
   }, [initialized, vaults.length, hasPositions, totalBalance, blendedApy, positions.length, addChatMessage]);
@@ -225,7 +225,7 @@ export default function AIFeed() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
-            <p className="text-sm text-curt-text-muted">Curtis is loading vault data...</p>
+            <p className="text-sm text-curt-text-muted">Loading market and portfolio data...</p>
           </div>
         )}
 
@@ -270,7 +270,7 @@ export default function AIFeed() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Curtis about your money..."
+            placeholder="Ask about your portfolio..."
             className="input-clean flex-1 px-4 py-3 text-sm"
             disabled={thinking}
           />

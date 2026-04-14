@@ -16,8 +16,8 @@ export default function InsightStrip() {
     if (positions.length === 0) {
       return {
         type: "discovery" as const,
-        text: `Curtis is scanning ${(vaults.length || 672).toLocaleString()} live vaults for a ${riskProfile} opening route.`,
-        action: "Generate opening plan",
+        text: `Looking across ${(vaults.length || 672).toLocaleString()} live vaults for a ${riskProfile} starting point.`,
+        action: "Build first plan",
       };
     }
 
@@ -31,8 +31,8 @@ export default function InsightStrip() {
     if (gap > 1) {
       return {
         type: "opportunity" as const,
-        text: `A better opportunity is available (+${gap.toFixed(1)}% APY on ${bestVault.network}).`,
-        action: "Generate refreshed plan",
+        text: `A stronger rate is available right now (+${gap.toFixed(1)}% APY on ${bestVault.network}).`,
+        action: "Refresh plan",
       };
     }
 
@@ -40,7 +40,7 @@ export default function InsightStrip() {
       return {
         type: "status" as const,
         text: `Your portfolio is earning ${formatApy(blendedApy)} blended APY across ${positions.length} position${positions.length !== 1 ? "s" : ""}.`,
-        action: "Open curtain view",
+        action: "Open details",
       };
     }
 
@@ -76,7 +76,7 @@ export default function InsightStrip() {
 
                   void executeCurtisAction({
                     type: "toggle_curtain",
-                    label: "Open curtain view",
+                      label: "Open details",
                     open: true,
                   });
                 }}

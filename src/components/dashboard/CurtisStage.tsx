@@ -71,10 +71,10 @@ function StrategyDock() {
     return (
       <div className="metric-panel h-full p-5 sm:p-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
-          Fresh Thesis
+          Suggested Plan
         </p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.05em] text-white">
-          Curtis already has a move ready.
+          A draft allocation is ready.
         </h2>
         <p className="mt-3 text-sm leading-7 text-white/62">{strategy.summary}</p>
         <div className="mt-6 space-y-3">
@@ -114,10 +114,10 @@ function StrategyDock() {
     return (
       <div className="metric-panel h-full p-5 sm:p-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
-          Live Watchlist
+          Market Snapshot
         </p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.05em] text-white">
-          What Curtis is watching now.
+          What stands out right now.
         </h2>
         <div className="mt-6 space-y-3">
           <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
@@ -134,7 +134,7 @@ function StrategyDock() {
                 ? `Top live vault is ${bestVault.protocol.name} on ${bestVault.network} at ${formatApy(
                     bestVault.analytics.totalApy
                   )}.`
-                : "Curtis is waiting on the live vault scan to rank the field."}
+                : "Live market data is still loading before the field can be ranked."}
             </p>
           </div>
           <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
@@ -145,7 +145,7 @@ function StrategyDock() {
               {chainCount} chains / {protocolCount} protocols
             </p>
             <p className="mt-2 text-sm leading-6 text-white/58">
-              Enough spread to stay resilient, with Curtis still scanning for cleaner placements whenever the field moves.
+              Enough spread to stay resilient, with room to tighten the mix if a cleaner setup appears.
             </p>
           </div>
           <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
@@ -167,13 +167,13 @@ function StrategyDock() {
   return (
     <div className="metric-panel h-full p-5 sm:p-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/48">
-        Opening Move
+        Starting Point
       </p>
       <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.05em] text-white">
-        Pick the capital posture you want.
+        Choose how you want to begin.
       </h2>
       <p className="mt-3 text-sm leading-7 text-white/62">
-        Curtis can draft from any of these starting points, then open the technical layer when you want to inspect the actual routing logic.
+        Start with one of these risk settings, then open the details later if you want to inspect the routing logic behind the plan.
       </p>
       <div className="mt-6 space-y-3">
         {(Object.keys(PROFILE_COPY) as RiskProfile[]).map((profile) => {
@@ -233,12 +233,12 @@ export default function CurtisStage() {
   );
 
   const stageTitle = positions.length
-    ? "Curtis is steering your capital in real time."
-    : "Curtis is ready to build your first allocation.";
+    ? "A clear read on your portfolio."
+    : "A simple place to build your first allocation.";
 
   const stageBody = positions.length
-    ? "He watches the yield field, the concentration risk, and the better route before you have to ask. The rest of the dashboard should support that read, not compete with it."
-    : "Pick a posture, let him score the live field, and keep the full technical layer one pull away whenever you want to inspect the machinery underneath.";
+    ? "Use this area to understand what is working, where the portfolio is concentrated, and what may deserve a change next. The rest of the dashboard supports that view instead of fighting for attention."
+    : "Pick a risk setting, compare live opportunities, and keep the detailed mechanics one click away until you actually need them.";
 
   async function handleGenerate(profile?: RiskProfile) {
     setIsGenerating(true);
@@ -261,12 +261,12 @@ export default function CurtisStage() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="stage-chip">
               <span className="live-dot bg-emerald-300" />
-              Curtis live
+              Portfolio desk live
             </span>
             <span className="text-xs uppercase tracking-[0.18em] text-white/42">
               {positions.length
-                ? `${positions.length} live positions under watch`
-                : `${(vaults.length || 672).toLocaleString()} vault opportunities on deck`}
+                ? `${positions.length} live positions in view`
+                : `${(vaults.length || 672).toLocaleString()} live vaults in the market`}
             </span>
           </div>
 
@@ -286,13 +286,13 @@ export default function CurtisStage() {
               className="stage-cta disabled:cursor-not-allowed disabled:opacity-55"
             >
               {isGenerating
-                ? "Reframing Curtis"
+                ? "Refreshing plan"
                 : strategy
-                  ? "Refresh Curtis thesis"
-                  : "Generate Curtis strategy"}
+                  ? "Refresh plan"
+                  : "Build a plan"}
             </button>
             <button onClick={toggleCurtain} className="stage-ghost">
-              Pull the curtain
+              Open details
             </button>
           </div>
 
@@ -319,16 +319,16 @@ export default function CurtisStage() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricTile
-              label="Capital under guidance"
+              label="Capital in play"
               value={loading ? "Loading" : formatUsd(totalBalance)}
               detail={
                 positions.length
-                  ? `${positions.length} placements live now`
-                  : "Ready for the first allocation"
+                  ? `${positions.length} live positions right now`
+                  : "Ready for a first allocation"
               }
             />
             <MetricTile
-              label="Current blend"
+              label="Current yield"
               value={
                 positions.length
                   ? formatApy(blendedApy)
@@ -337,11 +337,11 @@ export default function CurtisStage() {
               detail={
                 positions.length
                   ? "Weighted from active positions"
-                  : "Best live opportunity Curtis sees"
+                  : "Best live rate on the board"
               }
             />
             <MetricTile
-              label="Curtis posture"
+              label="Risk setting"
               value={PROFILE_COPY[riskProfile].label}
               detail={
                 strategy
@@ -378,12 +378,12 @@ export default function CurtisStage() {
             <div className="curtis-stage__ring curtis-stage__ring--two" />
             <div className="curtis-stage__ring curtis-stage__ring--three" />
             <div className="curtis-stage__core px-6">
-              <span className="stage-chip">AI portfolio agent</span>
+              <span className="stage-chip">Portfolio guide</span>
               <p className="mt-5 text-[44px] font-semibold tracking-[-0.08em] text-white sm:text-[56px]">
                 Curtis
               </p>
               <p className="mt-3 max-w-[230px] text-sm leading-6 text-white/58">
-                Scanning {(vaults.length || 672).toLocaleString()} live vaults and turning complexity into a single next move.
+                Looking across {(vaults.length || 672).toLocaleString()} live vaults and narrowing them into a clearer next step.
               </p>
             </div>
           </div>
@@ -397,10 +397,10 @@ export default function CurtisStage() {
           <div className="flex flex-col gap-4 border-b border-black/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-curt-text-muted">
-                Curtis channel
+                Portfolio chat
               </p>
               <p className="mt-1 text-sm text-curt-text-secondary">
-                Ask for a safer posture, a better yield route, or the plain-English reason behind any move.
+                Ask for a safer mix, a better rate, or a plain-English explanation of any move.
               </p>
             </div>
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-black/8 bg-white/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-curt-text-muted">

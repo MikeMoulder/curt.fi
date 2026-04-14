@@ -29,17 +29,17 @@ export default function PositionsList() {
           <div>
             <span className="section-label">Active Positions</span>
             <h3 className="mt-3 text-[20px] font-semibold tracking-tight text-curt-text">
-              Curtis hasn&apos;t deployed capital yet.
+              No capital has been deployed yet.
             </h3>
           </div>
           <button onClick={toggleCurtain} className="btn-ghost text-[12px]">
-            Pull the curtain
+            Open details
           </button>
         </div>
 
         <div className="mt-5 rounded-[24px] border border-dashed border-curt-border bg-white/58 px-5 py-8 text-center backdrop-blur">
           <p className="text-[14px] leading-relaxed text-curt-text-secondary">
-            Make a first deposit or ask Curtis for a launch plan. This ledger will populate once capital is routed into live positions.
+            Make a first deposit or build a plan. Your live positions will appear here once funds are allocated.
           </p>
           <button onClick={() => setDepositOpen(true)} className="btn-accent mt-5 px-5 py-2.5 text-[13px]">
             Make first deposit
@@ -60,11 +60,11 @@ export default function PositionsList() {
         <div>
           <span className="section-label">Active Positions</span>
           <h3 className="mt-3 text-[20px] font-semibold tracking-tight text-curt-text">
-            Capital deployed across the field.
+            Current positions.
           </h3>
         </div>
         <button onClick={toggleCurtain} className="btn-ghost text-[12px]">
-          Pull the curtain
+          Open details
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
