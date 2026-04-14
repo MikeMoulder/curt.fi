@@ -1,6 +1,8 @@
 import type { Chain, Position, Protocol, Vault, VaultsResponse } from "../types";
 
 const BASE_URL = "https://earn.li.fi";
+const EARN_API_KEY =
+  process.env.LIFI_API_KEY || process.env.NEXT_PUBLIC_LIFI_API_KEY;
 
 interface RawEarnToken {
   address?: string;
@@ -49,12 +51,29 @@ interface RawEarnVaultsResponse {
 }
 
 interface RawEarnPositionsResponse {
-  data?: Array<
-    Omit<Position, "vault"> & {
-      vault: RawEarnVault;
-    }
-  >;
+  data?: RawEarnPosition[];
+  positions?: RawEarnPosition[];
 }
+
+interface RawEarnPositionWithVault {
+  vault: RawEarnVault;
+  balanceUsd?: string;
+  balance?: string;
+  underlyingBalance?: string;
+  balanceNative?: string;
+}
+
+interface RawEarnPositionWithAsset {
+  chainId?: number;
+  protocolName?: string;
+  asset?: RawEarnToken;
+  balanceUsd?: string;
+  balance?: string;
+  underlyingBalance?: string;
+  balanceNative?: string;
+}
+
+type RawEarnPosition = RawEarnPositionWithVault | RawEarnPositionWithAsset;
 
 type FetchJsonInit = RequestInit & {
   next?: {
@@ -77,12 +96,14 @@ async function fetchJson<T>(
     });
   }
 
-  const response = await fetch(
-    url.toString(),
-    requestInit ?? {
-      next: { revalidate: 60 },
-    }
-  );
+  const response = await fetch(url.toString(), {
+    next: { revalidate: 60 },
+    ...requestInit,
+    headers: {
+      ...(EARN_API_KEY ? { "x-lifi-api-key": EARN_API_KEY } : {}),
+      ...(requestInit?.headers ?? {}),
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Earn API error: ${response.status} ${response.statusText}`);
@@ -148,6 +169,66 @@ function transformVault(raw: RawEarnVault): Vault {
   };
 }
 
+function isVaultBackedPosition(
+  position: RawEarnPosition
+): position is RawEarnPositionWithVault {
+  return "vault" in position && Boolean(position.vault);
+}
+
+function transformPosition(position: RawEarnPosition): Position {
+  if (isVaultBackedPosition(position)) {
+    return {
+      vault: transformVault(position.vault),
+      balanceUsd: position.balanceUsd ?? "0",
+      balance: position.balance ?? position.balanceNative ?? "0",
+      underlyingBalance:
+        position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
+    };
+  }
+
+  const asset = position.asset;
+
+  return {
+    vault: {
+      address: asset?.address ?? "",
+      network: "",
+      chainId: position.chainId ?? 0,
+      name: asset?.name ?? asset?.symbol ?? "Unknown position",
+      protocol: {
+        name: position.protocolName ?? "Unknown",
+      },
+      tokens: asset
+        ? [
+            {
+              address: asset.address ?? "",
+              symbol: asset.symbol ?? "UNKNOWN",
+              decimals: asset.decimals ?? 18,
+              name: asset.name ?? asset.symbol ?? "Unknown token",
+              chainId: position.chainId ?? 0,
+              logoURI: asset.logoURI,
+              priceUsd: asset.priceUsd,
+            },
+          ]
+        : [],
+      analytics: {
+        baseApy: null,
+        rewardApy: null,
+        totalApy: null,
+        apy1d: null,
+        apy7d: null,
+        apy30d: null,
+        tvlUsd: "0",
+      },
+      tags: [],
+      isTransactional: false,
+    },
+    balanceUsd: position.balanceUsd ?? "0",
+    balance: position.balance ?? position.balanceNative ?? "0",
+    underlyingBalance:
+      position.underlyingBalance ?? position.balanceNative ?? position.balance ?? "0",
+  };
+}
+
 export async function getVaults(opts?: {
   chainId?: number;
   asset?: string;
@@ -193,8 +274,8 @@ export async function getAllVaults(minTvl = "100000"): Promise<Vault[]> {
   return allVaults;
 }
 
-export async function getVault(network: string, address: string): Promise<Vault> {
-  const raw = await fetchJson<RawEarnVault>(`/v1/earn/vaults/${network}/${address}`);
+export async function getVault(chainId: number, address: string): Promise<Vault> {
+  const raw = await fetchJson<RawEarnVault>(`/v1/earn/vaults/${chainId}/${address}`);
   return transformVault(raw);
 }
 
@@ -211,18 +292,11 @@ export async function getProtocols(): Promise<Protocol[]> {
 }
 
 export async function getPositions(userAddress: string): Promise<Position[]> {
-  try {
-    const response = await fetchJson<RawEarnPositionsResponse>(
-      `/v1/earn/portfolio/${userAddress}/positions`,
-      undefined,
-      { cache: "no-store" }
-    );
+  const response = await fetchJson<RawEarnPositionsResponse>(
+    `/v1/earn/portfolio/${userAddress}/positions`,
+    undefined,
+    { cache: "no-store" }
+  );
 
-    return (response.data ?? []).map((position) => ({
-      ...position,
-      vault: transformVault(position.vault),
-    }));
-  } catch {
-    return [];
-  }
+  return (response.data ?? response.positions ?? []).map(transformPosition);
 }

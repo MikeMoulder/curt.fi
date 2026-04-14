@@ -10,11 +10,17 @@ export default function InsightStrip() {
   const positions = useStore((s) => s.positions);
   const blendedApy = useStore((s) => s.blendedApy);
   const vaults = useStore((s) => s.vaults);
+  const riskProfile = useStore((s) => s.riskProfile);
 
   const insight = useMemo(() => {
-    if (positions.length === 0) return null;
+    if (positions.length === 0) {
+      return {
+        type: "discovery" as const,
+        text: `Curtis is scanning ${(vaults.length || 672).toLocaleString()} live vaults for a ${riskProfile} opening route.`,
+        action: "Generate opening plan",
+      };
+    }
 
-    // Find best available vault APY vs current
     const bestVault = vaults
       .filter((v) => v.isTransactional && v.analytics.totalApy !== null)
       .sort((a, b) => (b.analytics.totalApy ?? 0) - (a.analytics.totalApy ?? 0))[0];
@@ -34,12 +40,12 @@ export default function InsightStrip() {
       return {
         type: "status" as const,
         text: `Your portfolio is earning ${formatApy(blendedApy)} blended APY across ${positions.length} position${positions.length !== 1 ? "s" : ""}.`,
-        action: null,
+        action: "Open curtain view",
       };
     }
 
     return null;
-  }, [positions, blendedApy, vaults]);
+  }, [positions, blendedApy, vaults, riskProfile]);
 
   return (
     <AnimatePresence>
@@ -63,8 +69,8 @@ export default function InsightStrip() {
             {insight.action && (
               <button
                 onClick={() => {
-                  if (insight.type === "opportunity") {
-                    void generateStrategyFromStore();
+                  if (insight.type === "opportunity" || insight.type === "discovery") {
+                    void generateStrategyFromStore(riskProfile);
                     return;
                   }
 

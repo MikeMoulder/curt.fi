@@ -9,6 +9,7 @@ export default function RecommendationCard() {
   const strategy = useStore((s) => s.strategy);
   const positions = useStore((s) => s.positions);
   const riskProfile = useStore((s) => s.riskProfile);
+  const toggleCurtain = useStore((s) => s.toggleCurtain);
 
   const topAlloc = strategy?.allocations[0];
 
@@ -83,6 +84,9 @@ export default function RecommendationCard() {
             <div className="mt-5 flex flex-wrap gap-2 border-t border-curt-border pt-4">
               <button onClick={handleAccept} className="btn-action">
                 Deposit into top pick
+              </button>
+              <button onClick={toggleCurtain} className="btn-ghost text-[13px]">
+                Inspect in curtain
               </button>
               <button onClick={() => void generateStrategyFromStore(riskProfile)} className="btn-ghost text-[13px]">
                 Regenerate

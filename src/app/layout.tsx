@@ -16,7 +16,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "curt.fi — AI-managed yield",
+  title: "curt.fi",
   description:
     "Your money should work harder. curt.fi intelligently routes your funds across the best opportunities in DeFi.",
 };

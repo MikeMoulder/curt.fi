@@ -28,8 +28,11 @@ export async function GET(
     );
   } catch (error) {
     console.error("Earn positions API error:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch positions";
+
     return NextResponse.json(
-      { error: "Failed to fetch positions" },
+      { error: message },
       {
         status: 500,
         headers: {

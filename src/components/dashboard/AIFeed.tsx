@@ -32,7 +32,7 @@ function AIResponseBlock({ message, isLatest }: { message: ChatMessage; isLatest
       initial={isLatest ? { opacity: 0, y: 12 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
-      className="card card-shadow p-5 sm:p-6"
+      className="rounded-[26px] border border-black/6 bg-white/72 p-5 shadow-[0_18px_48px_rgba(16,28,24,0.06)] backdrop-blur sm:p-6"
     >
       {/* Category badge */}
       <div className="flex items-center gap-2 mb-3">
@@ -49,14 +49,14 @@ function AIResponseBlock({ message, isLatest }: { message: ChatMessage; isLatest
 
       {/* Body */}
       {body && (
-        <p className="mt-2 text-sm text-curt-text-secondary leading-relaxed">
+        <p className="mt-2 text-sm leading-relaxed text-curt-text-secondary">
           {body}
         </p>
       )}
 
       {/* Actions */}
       {message.actions && message.actions.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-curt-border flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-black/6 pt-3">
           {message.actions.map((action, i) => (
             <button
               key={i}
@@ -95,14 +95,11 @@ function UserQueryBlock({ message, isLatest }: { message: ChatMessage; isLatest:
       initial={isLatest ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="flex items-start gap-3 py-2"
+      className="flex items-start justify-end py-2"
     >
-      <div className="w-6 h-6 rounded-full bg-curt-surface-alt flex items-center justify-center shrink-0 mt-0.5">
-        <svg className="w-3 h-3 text-curt-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-        </svg>
+      <div className="max-w-[85%] rounded-[24px] rounded-tr-sm bg-curt-text px-4 py-3 text-sm leading-relaxed text-white shadow-[0_14px_32px_rgba(16,28,24,0.18)]">
+        {message.content}
       </div>
-      <p className="text-sm text-curt-text-secondary pt-0.5">{message.content}</p>
     </motion.div>
   );
 }
@@ -113,7 +110,7 @@ function ThinkingBlock() {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card p-5 border-curt-violet/20"
+      className="rounded-[26px] border border-black/6 bg-white/68 p-5 backdrop-blur"
     >
       <div className="flex items-center gap-2.5">
         <span className="badge badge-ai">
@@ -249,12 +246,12 @@ export default function AIFeed() {
 
       {/* Suggestions */}
       {!thinking && chatMessages.length <= 2 && (
-        <div className="flex gap-2 flex-wrap px-1 pb-3">
+        <div className="flex flex-wrap gap-2 px-1 pb-3">
           {suggestions.map((s) => (
             <button
               key={s}
               onClick={() => handleSend(s)}
-              className="text-xs text-curt-text-muted border border-curt-border rounded-lg px-3 py-1.5 hover:border-curt-accent hover:text-curt-accent transition-colors cursor-pointer"
+              className="rounded-full border border-black/8 bg-white/74 px-3 py-2 text-xs font-medium text-curt-text-muted transition-colors hover:border-curt-accent hover:text-curt-accent"
             >
               {s}
             </button>
@@ -263,7 +260,7 @@ export default function AIFeed() {
       )}
 
       {/* Command bar */}
-      <div className="border-t border-curt-border pt-3">
+      <div className="border-t border-black/6 pt-4">
         <form
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="flex gap-2"

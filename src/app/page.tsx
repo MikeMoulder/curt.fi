@@ -84,7 +84,7 @@ function HomeContent() {
               </ConnectButton.Custom>
             )}
             <Link href="#how" className="btn-secondary px-6 py-2.5 text-[14px]">
-              View Demo
+              How it Works?
             </Link>
           </motion.div>
         </motion.div>

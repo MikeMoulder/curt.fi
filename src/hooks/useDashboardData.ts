@@ -41,10 +41,14 @@ export function useDashboardData() {
       setLoading(true);
       try {
         const res = await fetch(`/api/earn/portfolio/${address}/positions`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => null);
+          throw new Error(errorBody?.error ?? "Failed to fetch positions");
+        }
         const json = await res.json();
         if (!cancelled) setPositions(json.data ?? []);
-      } catch {
+      } catch (error) {
+        console.error("Portfolio fetch failed:", error);
         if (!cancelled) setPositions([]);
       } finally {
         if (!cancelled) setLoading(false);
