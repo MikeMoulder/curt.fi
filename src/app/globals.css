@@ -486,7 +486,8 @@ body::after {
 
 .curtis-console {
   display: flex;
-  min-height: 100%;
+  min-height: 0;
+  height: clamp(460px, 72vh, 680px);
   flex-direction: column;
   overflow: hidden;
   border-radius: 28px;

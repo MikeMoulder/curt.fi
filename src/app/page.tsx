@@ -34,7 +34,6 @@ function HomeContent() {
           <Link href="#curtis" className="hidden sm:block text-[13px] text-curt-text-muted hover:text-curt-text transition-colors">
             Meet Curtis
           </Link>
-          <ConnectButton showBalance={false} chainStatus="icon" />
         </div>
       </nav>
 

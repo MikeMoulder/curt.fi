@@ -143,15 +143,56 @@ export default function AIFeed() {
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const feedEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const latestAssistantRef = useRef<HTMLDivElement>(null);
+  const responseAnchorRef = useRef<HTMLDivElement>(null);
+  const shouldSnapToResponseRef = useRef(false);
+  const shouldSnapToReplyViewRef = useRef(false);
 
   const hasPositions = positions.length > 0;
 
   // Scroll to bottom
   useEffect(() => {
-    feedEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const feed = feedRef.current;
+
+    if (!feed) {
+      return;
+    }
+
+    feed.scrollTo({ top: feed.scrollHeight, behavior: "smooth" });
   }, [chatMessages.length, thinking]);
+
+  useEffect(() => {
+    if (!thinking || !shouldSnapToResponseRef.current) {
+      return;
+    }
+
+    shouldSnapToResponseRef.current = false;
+    responseAnchorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, [thinking]);
+
+  useEffect(() => {
+    if (thinking || !shouldSnapToReplyViewRef.current) {
+      return;
+    }
+
+    const latestMessage = chatMessages[chatMessages.length - 1];
+
+    if (!latestMessage || latestMessage.role !== "assistant") {
+      return;
+    }
+
+    shouldSnapToReplyViewRef.current = false;
+    latestAssistantRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+  }, [chatMessages, thinking]);
 
   // Auto-generate initial analysis once data is loaded
   const runInitialAnalysis = useCallback(async () => {
@@ -191,6 +232,9 @@ export default function AIFeed() {
   async function handleSend(text?: string) {
     const query = (text ?? input).trim();
     if (!query || thinking) return;
+
+    shouldSnapToResponseRef.current = true;
+    shouldSnapToReplyViewRef.current = true;
     setInput("");
     addChatMessage({ role: "user", content: query });
     setThinking(true);
@@ -217,7 +261,7 @@ export default function AIFeed() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Response feed */}
-      <div className="flex-1 overflow-y-auto px-1 py-4 space-y-4">
+      <div ref={feedRef} className="flex-1 overflow-y-auto px-1 py-4 space-y-4">
         {chatMessages.length === 0 && !thinking && (
           <div className="text-center py-12">
             <div className="w-10 h-10 rounded-xl bg-curt-violet-light flex items-center justify-center mx-auto mb-3">
@@ -231,7 +275,13 @@ export default function AIFeed() {
 
         {chatMessages.map((msg, i) =>
           msg.role === "assistant" ? (
-            <AIResponseBlock key={i} message={msg} isLatest={i === chatMessages.length - 1} />
+            <div
+              key={i}
+              ref={i === chatMessages.length - 1 ? latestAssistantRef : undefined}
+              className={i === chatMessages.length - 1 ? "scroll-mt-28" : undefined}
+            >
+              <AIResponseBlock message={msg} isLatest={i === chatMessages.length - 1} />
+            </div>
           ) : (
             <UserQueryBlock key={i} message={msg} isLatest={i === chatMessages.length - 1} />
           )
@@ -240,8 +290,6 @@ export default function AIFeed() {
         <AnimatePresence>
           {thinking && <ThinkingBlock />}
         </AnimatePresence>
-
-        <div ref={feedEndRef} />
       </div>
 
       {/* Suggestions */}
@@ -260,13 +308,12 @@ export default function AIFeed() {
       )}
 
       {/* Command bar */}
-      <div className="border-t border-black/6 pt-4">
+      <div ref={responseAnchorRef} className="border-t border-black/6 pt-4 scroll-mt-28">
         <form
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="flex gap-2"
         >
           <input
-            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
