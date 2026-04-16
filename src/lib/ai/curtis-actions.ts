@@ -142,11 +142,29 @@ export async function executeCurtisAction(action: CurtisAction) {
       }
       state.setWithdrawOpen(false);
       state.setDepositVaultAddress(action.vaultAddress ?? null);
+      state.setDepositDraft(
+        action.amount ||
+          action.tokenSymbol ||
+          action.fromChainId ||
+          action.autoQuote ||
+          action.autoSubmit ||
+          action.intentNote
+          ? {
+              amount: action.amount,
+              tokenSymbol: action.tokenSymbol,
+              fromChainId: action.fromChainId,
+              autoQuote: action.autoQuote,
+              autoSubmit: action.autoSubmit,
+              intentNote: action.intentNote,
+            }
+          : null
+      );
       state.setDepositOpen(true);
       return { ok: true as const };
 
     case "open_withdraw":
       state.setDepositOpen(false);
+      state.clearDepositDraft();
       state.setWithdrawVaultAddress(action.vaultAddress ?? null);
       state.setWithdrawOpen(true);
       return { ok: true as const };

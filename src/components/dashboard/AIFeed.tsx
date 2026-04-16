@@ -23,9 +23,62 @@ const SUGGESTIONS_EXISTING = [
 ];
 
 /* ── AI Response Block ── */
+function normalizeResponseContent(content: string) {
+  return content
+    .replace(/\r\n/g, "\n")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/(?:^|\s)\*\s+/g, "\n• ")
+    .replace(/\n-\s+/g, "\n• ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function splitResponseContent(content: string) {
+  const normalized = normalizeResponseContent(content);
+  const blocks = normalized
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  if (blocks.length === 0) {
+    return { headline: normalized, detailBlocks: [] as string[] };
+  }
+
+  return {
+    headline: blocks[0],
+    detailBlocks: blocks.slice(1),
+  };
+}
+
+function renderDetailBlock(block: string, key: string) {
+  const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+  const bulletLines = lines.filter(
+    (line) => line.startsWith("•") || line.startsWith("-") || line.startsWith("*")
+  );
+  const textLines = lines.filter(
+    (line) => !line.startsWith("•") && !line.startsWith("-") && !line.startsWith("*")
+  );
+
+  if (bulletLines.length > 0) {
+    return (
+      <div key={key} className="space-y-2">
+        {textLines.length > 0 && (
+          <p className="whitespace-pre-wrap">{textLines.join("\n")}</p>
+        )}
+        <ul className="list-disc space-y-1 pl-5">
+          {bulletLines.map((line) => (
+            <li key={`${key}-${line}`}>{line.replace(/^[•\-*]\s*/, "")}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return <p key={key} className="whitespace-pre-wrap">{block}</p>;
+}
+
 function AIResponseBlock({ message, isLatest }: { message: ChatMessage; isLatest: boolean }) {
-  const headline = message.content.split(/[.!?]\s/)[0] + (message.content.match(/[.!?]/) ? message.content.match(/[.!?]/)![0] : ".");
-  const body = message.content.slice(headline.length).trim();
+  const { headline, detailBlocks } = splitResponseContent(message.content);
 
   return (
     <motion.div
@@ -34,33 +87,31 @@ function AIResponseBlock({ message, isLatest }: { message: ChatMessage; isLatest
       transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
       className="rounded-[26px] border border-black/6 bg-white/72 p-5 shadow-[0_18px_48px_rgba(16,28,24,0.06)] backdrop-blur sm:p-6"
     >
-      {/* Category badge */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <span className="badge badge-ai">
           <span className="w-1.5 h-1.5 rounded-full bg-curt-violet pulse-dot" />
           Curtis
         </span>
       </div>
 
-      {/* Headline */}
-      <p className="text-[15px] font-semibold text-curt-text leading-snug">
+      <p className="whitespace-pre-wrap text-[15px] font-semibold leading-snug text-curt-text">
         {headline}
       </p>
 
-      {/* Body */}
-      {body && (
-        <p className="mt-2 text-sm leading-relaxed text-curt-text-secondary">
-          {body}
-        </p>
+      {detailBlocks.length > 0 && (
+        <div className="mt-3 space-y-3 text-sm leading-relaxed text-curt-text-secondary">
+          {detailBlocks.map((block, index) =>
+            renderDetailBlock(block, `${index}-${block.slice(0, 16)}`)
+          )}
+        </div>
       )}
 
-      {/* Actions */}
       {message.actions && message.actions.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-black/6 pt-3">
           {message.actions.map((action, i) => (
             <button
               key={i}
-              onClick={() => executeCurtisAction(action)}
+              onClick={() => void executeCurtisAction(action)}
               className="btn-action"
             >
               <ActionIcon type={action.type} />
@@ -97,7 +148,7 @@ function UserQueryBlock({ message, isLatest }: { message: ChatMessage; isLatest:
       transition={{ duration: 0.25 }}
       className="flex items-start justify-end py-2"
     >
-      <div className="max-w-[85%] rounded-[24px] rounded-tr-sm bg-curt-text px-4 py-3 text-sm leading-relaxed text-white shadow-[0_14px_32px_rgba(16,28,24,0.18)]">
+      <div className="max-w-[85%] whitespace-pre-wrap rounded-[24px] rounded-tr-sm bg-curt-text px-4 py-3 text-sm leading-relaxed text-white shadow-[0_14px_32px_rgba(16,28,24,0.18)]">
         {message.content}
       </div>
     </motion.div>
@@ -240,12 +291,21 @@ export default function AIFeed() {
     setThinking(true);
 
     try {
-      const reply = await fetchCurtisReply(query, positions, vaults, chatMessages);
+      const nextHistory: ChatMessage[] = [...chatMessages, { role: "user", content: query }];
+      const reply = await fetchCurtisReply(query, positions, vaults, nextHistory);
       addChatMessage({
         role: "assistant",
         content: reply.message,
         actions: reply.actions,
       });
+
+      const preparedDeposit = reply.actions?.find(
+        (action) => action.type === "open_deposit" && action.autoQuote
+      );
+
+      if (preparedDeposit) {
+        await executeCurtisAction(preparedDeposit);
+      }
     } catch {
       addChatMessage({
         role: "assistant",

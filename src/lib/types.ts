@@ -117,6 +117,15 @@ export interface Strategy {
   summary: string;
 }
 
+export interface DepositDraft {
+  fromChainId?: number;
+  tokenSymbol?: string;
+  amount?: string;
+  autoQuote?: boolean;
+  autoSubmit?: boolean;
+  intentNote?: string;
+}
+
 export type CurtisAction =
   | {
       type: "open_deposit";
@@ -124,6 +133,12 @@ export type CurtisAction =
       vaultAddress?: string;
       chainId?: number;
       riskProfile?: RiskProfile;
+      amount?: string;
+      tokenSymbol?: string;
+      fromChainId?: number;
+      autoQuote?: boolean;
+      autoSubmit?: boolean;
+      intentNote?: string;
     }
   | {
       type: "open_withdraw";

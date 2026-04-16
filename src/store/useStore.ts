@@ -5,6 +5,7 @@ import type {
   ChatMessage,
   RiskProfile,
   Strategy,
+  DepositDraft,
 } from "@/lib/types";
 
 interface AppState {
@@ -36,6 +37,9 @@ interface AppState {
   setDepositOpen: (open: boolean) => void;
   depositVaultAddress: string | null;
   setDepositVaultAddress: (vaultAddress: string | null) => void;
+  depositDraft: DepositDraft | null;
+  setDepositDraft: (draft: DepositDraft | null) => void;
+  clearDepositDraft: () => void;
   withdrawOpen: boolean;
   setWithdrawOpen: (open: boolean) => void;
   withdrawVaultAddress: string | null;
@@ -97,6 +101,9 @@ export const useStore = create<AppState>((set, get) => ({
   setDepositOpen: (depositOpen) => set({ depositOpen }),
   depositVaultAddress: null,
   setDepositVaultAddress: (depositVaultAddress) => set({ depositVaultAddress }),
+  depositDraft: null,
+  setDepositDraft: (depositDraft) => set({ depositDraft }),
+  clearDepositDraft: () => set({ depositDraft: null }),
   withdrawOpen: false,
   setWithdrawOpen: (withdrawOpen) => set({ withdrawOpen }),
   withdrawVaultAddress: null,

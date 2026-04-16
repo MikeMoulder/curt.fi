@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "@/store/useStore";
 import { useAccount, useChainId, useSendTransaction, useSwitchChain } from "wagmi";
 import { POPULAR_TOKENS, SUPPORTED_CHAINS } from "@/lib/config";
 import { parseTokenAmount, chainName } from "@/lib/utils";
+import type { QuoteResponse } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
 
 type TokenInfo = { address: string; symbol: string; decimals: number };
@@ -14,6 +15,8 @@ export default function DepositModal() {
   const setDepositOpen = useStore((s) => s.setDepositOpen);
   const depositVaultAddress = useStore((s) => s.depositVaultAddress);
   const setDepositVaultAddress = useStore((s) => s.setDepositVaultAddress);
+  const depositDraft = useStore((s) => s.depositDraft);
+  const clearDepositDraft = useStore((s) => s.clearDepositDraft);
   const vaults = useStore((s) => s.vaults);
   const requestPortfolioRefresh = useStore((s) => s.requestPortfolioRefresh);
 
@@ -22,32 +25,70 @@ export default function DepositModal() {
   const { sendTransactionAsync, isPending: isSending } = useSendTransaction();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
-  const [selectedChainId, setSelectedChainId] = useState(SUPPORTED_CHAINS[0].id);
+  const [selectedChainId, setSelectedChainId] = useState<number>(SUPPORTED_CHAINS[0].id);
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [amount, setAmount] = useState("");
   const [quoting, setQuoting] = useState(false);
-  const [quote, setQuote] = useState<{ to: string; data: string; value: string; chainId: number } | null>(null);
+  const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const autoQuoteKeyRef = useRef<string | null>(null);
+  const autoSubmitRef = useRef(false);
 
   const targetVault = depositVaultAddress ? vaults.find((v) => v.address === depositVaultAddress) : null;
-  const needsChainSwitch = quote != null && currentChainId !== quote.chainId;
+  const transactionRequest = quote?.transactionRequest ?? null;
+  const needsChainSwitch = transactionRequest != null && currentChainId !== transactionRequest.chainId;
+  const tokens: TokenInfo[] = POPULAR_TOKENS[selectedChainId] ?? [];
+  const requestedTokenReady =
+    !depositDraft?.tokenSymbol ||
+    selectedToken?.symbol.toLowerCase() === depositDraft.tokenSymbol.toLowerCase();
+  const requestedChainReady =
+    !depositDraft?.fromChainId || selectedChainId === depositDraft.fromChainId;
 
   useEffect(() => {
-    const tokens = POPULAR_TOKENS[selectedChainId];
-    if (tokens?.length) setSelectedToken(tokens[0]);
-  }, [selectedChainId]);
+    if (!depositOpen) return;
 
-  function handleClose() {
-    setDepositOpen(false);
-    setDepositVaultAddress(null);
+    if (depositDraft?.fromChainId) {
+      setSelectedChainId(depositDraft.fromChainId);
+    }
+
+    if (depositDraft?.amount) {
+      setAmount(depositDraft.amount);
+    }
+  }, [depositDraft?.amount, depositDraft?.fromChainId, depositOpen]);
+
+  useEffect(() => {
+    const availableTokens = POPULAR_TOKENS[selectedChainId] ?? [];
+
+    if (!availableTokens.length) {
+      setSelectedToken(null);
+      return;
+    }
+
+    const preferredToken = depositDraft?.tokenSymbol
+      ? availableTokens.find(
+          (token) => token.symbol.toLowerCase() === depositDraft.tokenSymbol?.toLowerCase()
+        )
+      : null;
+
+    if (preferredToken) {
+      setSelectedToken(preferredToken);
+      return;
+    }
+
+    if (!selectedToken || !availableTokens.some((token) => token.address === selectedToken.address)) {
+      setSelectedToken(availableTokens[0]);
+    }
+  }, [depositDraft?.tokenSymbol, depositOpen, selectedChainId, selectedToken]);
+
+  useEffect(() => {
     setQuote(null);
     setError(null);
-    setTxHash(null);
-    setAmount("");
-  }
+    autoQuoteKeyRef.current = null;
+    autoSubmitRef.current = false;
+  }, [amount, depositVaultAddress, selectedChainId, selectedToken?.address]);
 
-  async function handleGetQuote() {
+  const handleGetQuote = useCallback(async () => {
     if (!address || !selectedToken || !amount || !targetVault) return;
     setQuoting(true);
     setError(null);
@@ -70,39 +111,94 @@ export default function DepositModal() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to get quote");
       }
-      const data = await res.json();
-      setQuote(data.transactionRequest);
+      const data = (await res.json()) as QuoteResponse;
+      setQuote(data);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Quote failed");
     } finally {
       setQuoting(false);
     }
+  }, [address, amount, selectedChainId, selectedToken, targetVault]);
+
+  useEffect(() => {
+    if (
+      !depositOpen ||
+      !depositDraft?.autoQuote ||
+      !address ||
+      !selectedToken ||
+      !amount ||
+      !targetVault ||
+      !requestedTokenReady ||
+      !requestedChainReady ||
+      quoting ||
+      quote
+    ) {
+      return;
+    }
+
+    const quoteKey = [targetVault.address, selectedChainId, selectedToken.address, amount].join(":");
+    if (autoQuoteKeyRef.current === quoteKey) return;
+
+    autoQuoteKeyRef.current = quoteKey;
+    void handleGetQuote();
+  }, [address, amount, depositDraft?.autoQuote, depositOpen, handleGetQuote, quote, quoting, requestedChainReady, requestedTokenReady, selectedChainId, selectedToken, targetVault]);
+
+  function handleClose() {
+    setDepositOpen(false);
+    setDepositVaultAddress(null);
+    clearDepositDraft();
+    setQuote(null);
+    setError(null);
+    setTxHash(null);
+    setAmount("");
+    autoQuoteKeyRef.current = null;
+    autoSubmitRef.current = false;
   }
 
-  async function handleConfirm() {
-    if (!quote) return;
+  const handleConfirm = useCallback(async () => {
+    if (!transactionRequest) return;
     setError(null);
 
     try {
-      if (currentChainId !== quote.chainId) {
-        await switchChainAsync({ chainId: quote.chainId });
+      if (currentChainId !== transactionRequest.chainId) {
+        await switchChainAsync({ chainId: transactionRequest.chainId });
       }
 
       const hash = await sendTransactionAsync({
-        to: quote.to as `0x${string}`,
-        data: quote.data as `0x${string}`,
-        value: BigInt(quote.value || "0"),
-        chainId: quote.chainId,
+        to: transactionRequest.to as `0x${string}`,
+        data: transactionRequest.data as `0x${string}`,
+        value: BigInt(transactionRequest.value || "0"),
+        chainId: transactionRequest.chainId,
       });
 
       setTxHash(hash);
       requestPortfolioRefresh();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : `Failed to submit transaction on ${chainName(quote.chainId)}`);
+      setError(
+        e instanceof Error
+          ? e.message
+          : `Failed to submit transaction on ${chainName(transactionRequest.chainId)}`
+      );
     }
-  }
+  }, [currentChainId, requestPortfolioRefresh, sendTransactionAsync, switchChainAsync, transactionRequest]);
 
-  const tokens: TokenInfo[] = POPULAR_TOKENS[selectedChainId] ?? [];
+  useEffect(() => {
+    if (
+      !depositOpen ||
+      !depositDraft?.autoSubmit ||
+      !transactionRequest ||
+      isSending ||
+      isSwitchingChain ||
+      txHash
+    ) {
+      return;
+    }
+
+    if (autoSubmitRef.current) return;
+
+    autoSubmitRef.current = true;
+    void handleConfirm();
+  }, [depositDraft?.autoSubmit, depositOpen, handleConfirm, isSending, isSwitchingChain, transactionRequest, txHash]);
 
   return (
     <AnimatePresence>
@@ -148,6 +244,12 @@ export default function DepositModal() {
                 </div>
               ) : (
                 <>
+                  {depositDraft?.intentNote && (
+                    <div className="rounded-xl border border-curt-accent/20 bg-curt-accent-light px-3.5 py-3 text-sm text-curt-text-secondary">
+                      <span className="font-semibold text-curt-text">Curtis plan:</span> {depositDraft.intentNote}
+                    </div>
+                  )}
+
                   {/* Vault target */}
                   {targetVault ? (
                     <div className="rounded-xl p-3.5 flex items-center justify-between bg-curt-surface-alt border border-curt-border">
@@ -202,31 +304,38 @@ export default function DepositModal() {
 
                   {error && <p className="text-sm text-curt-danger">{error}</p>}
 
-                  {quote && (
-                    <div className="rounded-xl p-3 text-sm text-curt-accent bg-curt-accent-light flex items-center gap-2">
-                      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                      {needsChainSwitch
-                        ? `Quote ready. Your wallet will switch to ${chainName(quote.chainId)} before confirmation.`
-                        : "Quote ready. Confirm to proceed."}
+                  {quote && transactionRequest && (
+                    <div className="rounded-xl p-3 text-sm text-curt-accent bg-curt-accent-light">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                        <span>
+                          {needsChainSwitch
+                            ? `Route ready. Your wallet will switch to ${chainName(transactionRequest.chainId)} before approval.`
+                            : "Route ready. Approve in wallet to finish the deposit."}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-[12px] text-curt-text-secondary">
+                        From {amount} {selectedToken?.symbol} on {chainName(selectedChainId)} into {targetVault?.protocol.name}.
+                      </p>
                     </div>
                   )}
 
                   <button
-                    onClick={quote ? handleConfirm : handleGetQuote}
+                    onClick={quote ? handleConfirm : () => void handleGetQuote()}
                     disabled={!amount || !selectedToken || !targetVault || quoting || isSending || isSwitchingChain}
                     className="btn-primary w-full py-3.5 text-sm"
                   >
                     {isSwitchingChain
                       ? "Switching chain..."
                       : isSending
-                        ? "Confirming..."
+                        ? "Opening wallet..."
                         : quoting
-                          ? "Getting quote..."
+                          ? "Preparing route..."
                           : quote
                             ? needsChainSwitch
-                              ? "Switch Network & Confirm"
-                              : "Confirm Deposit"
-                            : "Get Quote"}
+                              ? "Switch Network & Approve"
+                              : "Approve in Wallet"
+                            : "Prepare Deposit"}
                   </button>
                 </>
               )}

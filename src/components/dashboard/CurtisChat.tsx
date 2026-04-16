@@ -10,15 +10,15 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const PROMPTS_WITH_POSITIONS = [
   "Make this portfolio safer without killing yield.",
-  "Where is the best move for fresh capital right now?",
+  "I have 2,000 USDC on Base. Where should fresh capital go?",
   "Explain why my current allocations make sense.",
   "Show me the most aggressive rebalance you'd actually trust.",
 ];
 
 const PROMPTS_EMPTY = [
-  "Build me a balanced starter allocation.",
+  "I have 1,500 USDC and want safe long-term yield.",
   "Where should I park stablecoins first?",
-  "Give me the safest route to 6-8% APY.",
+  "I want flexible savings, not degen risk.",
   "Show me the highest-quality yield on the board.",
 ];
 
@@ -40,20 +40,23 @@ function ActionIcon({ type }: { type: CurtisAction["type"] }) {
 }
 
 function splitMessage(content: string) {
-  const match = content.match(/^[^.!?]+[.!?]/);
+  const blocks = content
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
 
-  if (!match) {
-    return { headline: content, detail: "" };
+  if (blocks.length === 0) {
+    return { headline: content.trim(), detailBlocks: [] as string[] };
   }
 
   return {
-    headline: match[0].trim(),
-    detail: content.slice(match[0].length).trim(),
+    headline: blocks[0],
+    detailBlocks: blocks.slice(1),
   };
 }
 
 function AssistantMessage({ msg, isLatest }: { msg: ChatMessage; isLatest: boolean }) {
-  const { headline, detail } = splitMessage(msg.content);
+  const { headline, detailBlocks } = splitMessage(msg.content);
 
   return (
     <motion.div
@@ -65,13 +68,32 @@ function AssistantMessage({ msg, isLatest }: { msg: ChatMessage; isLatest: boole
       <div className="flex items-center justify-between gap-3">
         <span className="badge badge-ai">
           <span className="h-1.5 w-1.5 rounded-full bg-curt-violet live-dot" />
-          Curtis Brief
+          Current view
         </span>
-        <span className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Live intelligence</span>
+        <span className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Market state</span>
       </div>
 
-      <p className="mt-4 text-[17px] font-semibold leading-snug text-curt-text">{headline}</p>
-      {detail && <p className="mt-2 text-[14px] leading-relaxed text-curt-text-secondary">{detail}</p>}
+      <p className="mt-4 whitespace-pre-wrap text-[17px] font-semibold leading-snug text-curt-text">{headline}</p>
+      {detailBlocks.length > 0 && (
+        <div className="mt-3 space-y-3 text-[14px] leading-relaxed text-curt-text-secondary">
+          {detailBlocks.map((block, index) => {
+            const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+            const isBulletList = lines.every((line) => line.startsWith("-") || line.startsWith("•"));
+
+            if (isBulletList) {
+              return (
+                <ul key={`${index}-${block.slice(0, 12)}`} className="list-disc space-y-1 pl-5">
+                  {lines.map((line) => (
+                    <li key={line}>{line.replace(/^[-•]\s*/, "")}</li>
+                  ))}
+                </ul>
+              );
+            }
+
+            return <p key={`${index}-${block.slice(0, 12)}`} className="whitespace-pre-wrap">{block}</p>;
+          })}
+        </div>
+      )}
 
       {msg.actions && msg.actions.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-curt-border pt-4">
@@ -118,7 +140,7 @@ function ThinkingState() {
           <span className="h-1.5 w-1.5 rounded-full bg-curt-violet pulse-dot" />
           Curtis
         </span>
-        <span className="text-[13px] text-curt-text-muted">Scanning vault quality, concentration, and yield momentum.</span>
+        <span className="text-[13px] text-curt-text-muted">Reviewing yield, risk, and routing.</span>
       </div>
 
       <div className="mt-4 space-y-2">
@@ -223,7 +245,7 @@ export default function CurtisChat() {
       addChatMessage({
         role: "assistant",
         content:
-          "I am live across 21 chains and 672+ vaults. Give me a posture and I will sketch a first allocation before you move a dollar.",
+          "Tell me the amount, token, and risk level you want, and I will narrow the best deposit path.",
         actions: [
           { type: "generate_strategy", label: "Generate balanced plan", riskProfile: "balanced" },
           { type: "generate_strategy", label: "Generate safe plan", riskProfile: "safe" },
@@ -234,7 +256,7 @@ export default function CurtisChat() {
 
     addChatMessage({
       role: "assistant",
-      content: `I am watching ${positions.length} live position${positions.length === 1 ? "" : "s"} totaling ${formatUsd(totalBalance)} at ${formatApy(blendedApy)} blended APY. Ask me to de-risk, push yield harder, or explain exactly why the current routing works.`,
+      content: `I see ${positions.length} live position${positions.length === 1 ? "" : "s"} totaling ${formatUsd(totalBalance)} at ${formatApy(blendedApy)} blended APY. Ask me to de-risk, find a better pool, or prepare a deposit route.`,
       actions: [
         { type: "generate_strategy", label: "Refresh strategy" },
         { type: "toggle_curtain", label: "Open curtain view", open: true },
@@ -254,6 +276,14 @@ export default function CurtisChat() {
       const nextHistory: ChatMessage[] = [...chatMessages, { role: "user", content: query }];
       const reply = await fetchCurtisReply(query, positions, vaults, nextHistory);
       addChatMessage({ role: "assistant", content: reply.message, actions: reply.actions });
+
+      const preparedDeposit = reply.actions?.find(
+        (action) => action.type === "open_deposit" && action.autoQuote
+      );
+
+      if (preparedDeposit) {
+        await executeCurtisAction(preparedDeposit);
+      }
     } catch {
       addChatMessage({ role: "assistant", content: "I couldn't process that right now. Please try again." });
     } finally {
@@ -313,17 +343,17 @@ export default function CurtisChat() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="badge badge-ai">
                 <span className="h-1.5 w-1.5 rounded-full bg-curt-violet live-dot" />
-                Curtis command deck
+                Portfolio operator
               </span>
-              <span className="soft-pill">Not a side widget. A live portfolio operator.</span>
+              <span className="soft-pill">Live allocation and routing</span>
             </div>
 
             <h1 className="mt-6 max-w-4xl text-[36px] font-semibold tracking-tight text-curt-text sm:text-[48px] lg:text-[58px] lg:leading-[1.02]">
-              Curtis now owns the room instead of hiding in a floating corner.
+              Analyze the market, choose a route, and act from one place.
             </h1>
 
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-curt-text-secondary sm:text-[17px]">
-              He is the strategic layer of the product, so the interface treats him like one: visible, proactive, and wired directly into the capital, posture, and routing decisions happening live.
+              Curtis reviews yield options, asks for missing context, and can move straight into transaction preparation when you are ready.
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
@@ -360,7 +390,7 @@ export default function CurtisChat() {
               </button>
 
               <button onClick={() => void handleSend(hasPositions ? "Explain my current allocations in plain English." : "Where should I start with a first deposit?")} className="btn-secondary px-5 py-3 text-[13px]">
-                Get Curtis brief
+                Get quick read
               </button>
 
               <button
@@ -397,9 +427,9 @@ export default function CurtisChat() {
               </div>
 
               <div className="mt-5 rounded-[24px] border border-white/70 bg-white/72 p-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Curtis brief</p>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Current read</p>
                 <p className="mt-3 text-[15px] leading-relaxed text-curt-text">
-                  {latestAssistantMessage?.content ?? "Curtis is loading the latest market state before surfacing the first brief."}
+                  {latestAssistantMessage?.content ?? "Curtis is loading the latest market state."}
                 </p>
               </div>
             </div>
@@ -431,8 +461,8 @@ export default function CurtisChat() {
                 {topAllocation
                   ? topAllocation.reasoning
                   : hasPositions
-                    ? "Curtis already sees the portfolio. Push him toward safer exposure, higher yield, or a clearer explanation of the current wiring."
-                    : "Give Curtis a risk posture and he will turn that into a concrete starter plan before you deposit."}
+                    ? "Ask for safer exposure, better yield, or a clearer breakdown of the current setup."
+                    : "Set a risk posture and Curtis will turn it into a concrete starting plan before you deposit."}
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
