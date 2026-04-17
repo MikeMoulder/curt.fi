@@ -126,6 +126,20 @@ export interface DepositDraft {
   intentNote?: string;
 }
 
+export interface VaultComparisonItem {
+  vaultAddress: string;
+  chainId: number;
+  protocol: string;
+  chain: string;
+  tokens: string[];
+  apy: number | null;
+  apy7d?: number | null;
+  apy30d?: number | null;
+  tvlUsd?: string;
+  recommended?: boolean;
+  reasoning?: string;
+}
+
 export type CurtisAction =
   | {
       type: "open_deposit";
@@ -160,6 +174,17 @@ export type CurtisAction =
       type: "toggle_curtain";
       label: string;
       open?: boolean;
+    }
+  | {
+      type: "compare_vaults";
+      label: string;
+      vaults: VaultComparisonItem[];
+    }
+  | {
+      type: "show_position_analysis";
+      label: string;
+      vaultAddress?: string;
+      chainId?: number;
     };
 
 export interface ChatMessage {

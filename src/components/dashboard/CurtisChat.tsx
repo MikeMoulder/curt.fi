@@ -7,6 +7,7 @@ import { fetchCurtisReply } from "@/lib/ai/curtis-client";
 import { formatApy, formatUsd } from "@/lib/utils";
 import type { CurtisAction, ChatMessage, RiskProfile } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
+import VaultComparison from "./VaultComparison";
 
 const PROMPTS_WITH_POSITIONS = [
   "Make this portfolio safer without killing yield.",
@@ -34,6 +35,10 @@ function ActionIcon({ type }: { type: CurtisAction["type"] }) {
       return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>;
     case "toggle_curtain":
       return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /></svg>;
+    case "compare_vaults":
+      return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h18M3 18h18" /></svg>;
+    case "show_position_analysis":
+      return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>;
     default:
       return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>;
   }
@@ -58,6 +63,10 @@ function splitMessage(content: string) {
 function AssistantMessage({ msg, isLatest }: { msg: ChatMessage; isLatest: boolean }) {
   const { headline, detailBlocks } = splitMessage(msg.content);
 
+  const comparisonActions = msg.actions?.filter((a) => a.type === "compare_vaults") ?? [];
+  const buttonActions = msg.actions?.filter((a) => a.type !== "compare_vaults") ?? [];
+  const isGathering = !msg.actions?.length && !msg.content.includes("proceed") && msg.content.includes("?");
+
   return (
     <motion.div
       initial={isLatest ? { opacity: 0, y: 12 } : false}
@@ -68,9 +77,11 @@ function AssistantMessage({ msg, isLatest }: { msg: ChatMessage; isLatest: boole
       <div className="flex items-center justify-between gap-3">
         <span className="badge badge-ai">
           <span className="h-1.5 w-1.5 rounded-full bg-curt-violet live-dot" />
-          Current view
+          {isGathering ? "Gathering context" : "Current view"}
         </span>
-        <span className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">Market state</span>
+        <span className="text-[11px] uppercase tracking-[0.22em] text-curt-text-muted">
+          {isGathering ? "Follow-up" : "Market state"}
+        </span>
       </div>
 
       <p className="mt-4 whitespace-pre-wrap text-[17px] font-semibold leading-snug text-curt-text">{headline}</p>
@@ -95,9 +106,15 @@ function AssistantMessage({ msg, isLatest }: { msg: ChatMessage; isLatest: boole
         </div>
       )}
 
-      {msg.actions && msg.actions.length > 0 && (
+      {comparisonActions.map((action, index) =>
+        action.type === "compare_vaults" ? (
+          <VaultComparison key={`comparison-${index}`} vaults={action.vaults} />
+        ) : null
+      )}
+
+      {buttonActions.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-curt-border pt-4">
-          {msg.actions.map((action, index) => (
+          {buttonActions.map((action, index) => (
             <button
               key={`${action.label}-${index}`}
               onClick={() => void executeCurtisAction(action)}
@@ -140,11 +157,14 @@ function ThinkingState() {
           <span className="h-1.5 w-1.5 rounded-full bg-curt-violet pulse-dot" />
           Curtis
         </span>
-        <span className="text-[13px] text-curt-text-muted">Reviewing yield, risk, and routing.</span>
+        <span className="text-[13px] text-curt-text-muted">Analyzing yield, risk profile, and routing options.</span>
       </div>
 
-      <div className="mt-4 space-y-2">
-        <div className="h-3 w-40 shimmer rounded-full" />
+      <div className="mt-4 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-curt-accent animate-pulse" />
+          <div className="h-3 w-28 shimmer rounded-full" />
+        </div>
         <div className="h-3 w-full shimmer rounded-full" />
         <div className="h-3 w-3/4 shimmer rounded-full" />
       </div>

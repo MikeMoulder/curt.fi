@@ -271,7 +271,7 @@ export async function getVaults(opts?: {
   if (opts?.limit) params.limit = opts.limit;
   if (opts?.cursor) params.cursor = opts.cursor;
 
-  const raw = await fetchJson<RawEarnVaultsResponse>("/v1/earn/vaults", params);
+  const raw = await fetchJson<RawEarnVaultsResponse>("/v1/vaults", params);
 
   return {
     data: (raw.data ?? []).map(transformVault),
@@ -298,25 +298,25 @@ export async function getAllVaults(minTvl = "100000"): Promise<Vault[]> {
 }
 
 export async function getVault(chainId: number, address: string): Promise<Vault> {
-  const raw = await fetchJson<RawEarnVault>(`/v1/earn/vaults/${chainId}/${address}`);
+  const raw = await fetchJson<RawEarnVault>(`/v1/vaults/${chainId}/${address}`);
   return transformVault(raw);
 }
 
 export async function getChains(): Promise<Chain[]> {
-  const response = await fetchJson<Chain[] | { data?: Chain[] }>("/v1/earn/chains");
+  const response = await fetchJson<Chain[] | { data?: Chain[] }>("/v1/chains");
   return Array.isArray(response) ? response : response.data ?? [];
 }
 
 export async function getProtocols(): Promise<Protocol[]> {
   const response = await fetchJson<Protocol[] | { data?: Protocol[] }>(
-    "/v1/earn/protocols"
+    "/v1/protocols"
   );
   return Array.isArray(response) ? response : response.data ?? [];
 }
 
 export async function getPositions(userAddress: string): Promise<Position[]> {
   const response = await fetchJson<RawEarnPositionsResponse>(
-    `/v1/earn/portfolio/${userAddress}/positions`,
+    `/v1/portfolio/${userAddress}/positions`,
     undefined,
     { cache: "no-store" }
   );

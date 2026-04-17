@@ -187,5 +187,14 @@ export async function executeCurtisAction(action: CurtisAction) {
         state.toggleCurtain();
       }
       return { ok: true as const };
+
+    case "compare_vaults":
+      // Comparison is rendered inline in the chat message — no store mutation needed.
+      // If the user clicks "Deposit into this" on a comparison card, it dispatches open_deposit.
+      return { ok: true as const };
+
+    case "show_position_analysis":
+      // Position analysis is rendered inline in the chat message.
+      return { ok: true as const };
   }
 }
